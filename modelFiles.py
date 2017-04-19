@@ -1,0 +1,13 @@
+modelFilesList = ["title2pingze",
+              "title2delimiter",
+              "word2pingze",
+              "pingze2rhythm",
+              "word2rhythm",
+              "rhythm2word",
+              "pingze2word",
+              "lastWordCount",
+              "lastRhythmCount",
+              # "bigramStart",
+              # "bigramEnd",
+              "bigramCount",
+              "sentences"]
