@@ -69,21 +69,11 @@ class Learn:
 
         self.title2pingze = {}
         self.title2delimiter = {}
-        self.pingze2rhythm = {}
         self.word2rhythm = {}
         self.word2pingze = {}
-        self.rhythm2word = {}
-        self.pingze2word = {}
-        self.lastWordCount = {}
-        self.lastRhythmCount = {}
-
         self.bigramCount = {}
-
-        self.trigramCount = {}
-
         self.bigramWord2VecModel = None
         self.trigramWord2VecModel = None
-        self.sentences = []
 
     def buildTitle2Pingze(self):
         for CiPaiMing, PingZeSentence in title2rhythm.iteritems():
@@ -103,26 +93,17 @@ class Learn:
                 rhythmWord = line1[1]
                 isPing = True
                 if line1[0] == "平":
-                    self.pingze2rhythm.setdefault('1', []).append(rhythmWord)
                     isPing = True
-                else:  # ze related
-                    self.pingze2rhythm.setdefault('2', []).append(rhythmWord)
+                else:
                     isPing = False
 
-                words = []
                 for word in line2:
                     self.word2rhythm[word] = rhythmWord
-                    if isPing:  # ping related
+                    if isPing:
                         self.word2pingze[word] = '1'
-                    else:  # ze related
+                    else:
                         self.word2pingze[word] = '2'
-                    words.append(word)
-                self.rhythm2word[rhythmWord] = words
-
-                if isPing:
-                    self.pingze2word.setdefault('1', []).extend(words)
-                else:
-                    self.pingze2word.setdefault('2', []).extend(words)
+                    #words.append(word)
                 line1 = f.readline().strip().decode("utf-8")
 
     def countRhyth(self):
@@ -135,30 +116,12 @@ class Learn:
                 sentences = re.split(u"[，。、]", line)
                 for sentence in sentences:
                     if sentence:
-                        self.sentences.append(sentence)
-                        lastWord = sentence[-1]
-                        if lastWord not in self.word2rhythm:
-                            continue
-                        rhythmWord = self.word2rhythm[lastWord]
-                        if lastWord not in self.lastWordCount:
-                            self.lastWordCount[lastWord] = 1
-                        else:
-                            self.lastWordCount[lastWord] += 1
-                        if rhythmWord not in self.lastRhythmCount:
-                            self.lastRhythmCount[rhythmWord] = 1
-                        else:
-                            self.lastRhythmCount[rhythmWord] += 1
-
-
                         sentenceLen = len(sentence)
-                        if sentenceLen == 3:
-                            self.buildTrigram(sentence)
-                        elif sentenceLen == 4:
+                        if sentenceLen == 4:
                             self.buildBigram(sentence[0], sentence[1])
                             self.buildBigram(sentence[2], sentence[3])
                         elif sentenceLen == 5:
                             self.buildBigram(sentence[0], sentence[1])
-                            self.buildTrigram(sentence[2:])
                         elif sentenceLen == 6:
                             self.buildBigram(sentence[0], sentence[1])
                             self.buildBigram(sentence[2], sentence[3])
@@ -166,20 +129,12 @@ class Learn:
                         elif sentenceLen == 7:
                             self.buildBigram(sentence[0], sentence[1])
                             self.buildBigram(sentence[2], sentence[3])
-                            self.buildTrigram(sentence[4:])
                         elif sentenceLen == 9:
                             self.buildBigram(sentence[0], sentence[1])
                             self.buildBigram(sentence[2], sentence[3])
                             self.buildBigram(sentence[4], sentence[5])
-                            self.buildTrigram(sentence[6:])
                 line = f.readline().strip().decode("utf-8")
             self.bigramCount = sorted(self.bigramCount.items(), key=operator.itemgetter(1), reverse=True)
-
-    def buildTrigram(self, trigram):
-        if trigram not in self.trigramCount:
-            self.trigramCount[trigram] = 1
-        else:
-            self.trigramCount[trigram] += 1
 
     def buildBigram(self, firstWord, lastWord):
         bigram_key = firstWord + lastWord
@@ -259,7 +214,6 @@ class Learn:
         print "finish build_word2vec"
 
         self.saveModel()
-
 
 if __name__ == '__main__':
     # sourceFile = sys.argv[1];
