@@ -82,7 +82,7 @@ class Poem:
 
     def findTrigram(self, pingze, keyWord, usedWord, rhythm):
         try:
-            candidateWords = self.trigramWord2VecModel.most_similar(positive=[keyWord], topn=100)
+            candidateWords = self.trigramWord2VecModel.most_similar(positive=[keyWord],topn=100)
         except KeyError as e:
             #print "Cannot find " + keyWord
             return ""
@@ -208,13 +208,6 @@ class Poem:
                 break
         return self.format(result)
 
-def getUserInput():
-    tags = []
-    length = len(sys.argv)
-    for tag in range(1, length):
-        tags.append(tag)
-    print tags
-
 def checkValid(key, userKey):
     for keyElment in userKey:
         if keyElment in key:
@@ -265,29 +258,50 @@ def extendKeyWords(keyWords, poem):
         res[i] = getTopNKeyWords(poem, used, candidateLength)
     return res
 
-if __name__ == '__main__':
-    # titleList = [u"蝶恋花", u"风入松", u"摸鱼儿"]
-    poem = Poem()
+def getUserInput(file):
+    result = []
+    with open(file) as f:
+        line = f.readline().rstrip().decode("utf-8")
+        while line != "END":
+            params = line.split(" ")
+            result.append(params)
+            line = f.readline().rstrip().decode("utf-8")
+    return result
 
+
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print "Usage:\n\tpython test.py YOUR_INPUT_FILE"
+        exit()
+
+    poem = Poem()
     begin = time.time()
     poem.loadModel()
     end = time.time()
-    print "finish building model, using " + str(end - begin) + "seconds"
-    titleList = poem.title2pingze.keys()
-    #tags = getUserInput()
-    tags = ["春风", "明月", "江南", "笑"]
+    print "Finish loading model, using " + str(end - begin) + "seconds\n"
 
-    for title in titleList:
+    titleList = poem.title2pingze.keys()
+
+    tags = getUserInput(sys.argv[1])
+
+    for tag in tags:
+        title = tag[0].decode()
+        if title not in titleList:
+            print "Oooops, " + title + " is not support yet!"
+            continue
         poem._title = title
         words = []
-        for tag in tags:
-            words.append(tag.decode())
+        tmp = []
+        for i in range(1, len(tag)):
+            tmp.append(tag[i])
+            words.append(tag[i].decode())
         words = extendKeyWords(words, poem)
         #numpy.random.shuffle(words)
         poem._important_words = words
         result = poem.write()
+        print "keywords: " + (" ".join(tmp))
         print poem._title
         print result[0]
         print result[1]
         print "\n"
-        #break
+
