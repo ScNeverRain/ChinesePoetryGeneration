@@ -78,7 +78,6 @@ class Learn:
     def buildTitle2Pingze(self):
         for CiPaiMing, PingZeSentence in title2rhythm.iteritems():
             self.title2pingze[CiPaiMing] = re.findall(r"[0-9]+", PingZeSentence)
-
             delimiters = []
             for word in PingZeSentence:
                 if word in [",", ".", "`", "|"]:
@@ -103,10 +102,9 @@ class Learn:
                         self.word2pingze[word] = '1'
                     else:
                         self.word2pingze[word] = '2'
-                    #words.append(word)
                 line1 = f.readline().strip().decode("utf-8")
 
-    def countRhyth(self):
+    def countRhythm(self):
         with open(self.sourceFile, 'r') as f:
             line = f.readline().strip().decode("utf-8")
             while line != "END":
@@ -207,7 +205,7 @@ class Learn:
         self.pingzeRhythm2words()
         print "finish pingzeRhythm2words"
 
-        self.countRhyth()
+        self.countRhythm()
         print "finish countRhyth"
 
         self.word2vec()
