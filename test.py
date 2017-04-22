@@ -31,11 +31,17 @@ class Poem:
                 setattr(self, data_file, value)
         self.bigramWord2VecModel = models.Word2Vec.load("./model/bigramWordModel")
         self.trigramWord2VecModel = models.Word2Vec.load("./model/trigramWordModel")
+        self.title2pingze["5"] = ""
+        self.title2pingze["7"] = ""
 
-
-    def format(self, result_sentence_list):
+    def format(self, result_sentence_list, isTang):
         l = []
         result = ""
+        if isTang:
+            l.append(result_sentence_list[0] + ", " + result_sentence_list[1] + ".")
+            l.append(result_sentence_list[2] + ", " + result_sentence_list[3] + ".")
+            return l
+
         delimiters = self.title2delimiter[self._title]
         index = 0
         for result_sentence in result_sentence_list:
@@ -61,6 +67,8 @@ class Poem:
             return [pingzeSentence[0:2], pingzeSentence[2:4], pingzeSentence[4:6], pingzeSentence[6:]]
 
     def checkPingzeAndWord(self, pingze, keyWord):
+        if pingze == "":
+            return True
         if len(pingze) != len(keyWord):
             return False
         for i in range(0, len(keyWord)):
@@ -70,17 +78,21 @@ class Poem:
                 return False
         return True
 
-    def checkRhythm(self, word, rhythm):
+    def checkRhythm(self, word, rhythm, NeedRhythm):
+
         if len(rhythm) == 0:
             return True
         lastWord = word[-1]
+        res = False
         if lastWord in self.word2rhythm:
             thisRhythm = self.word2rhythm[lastWord]
             if thisRhythm in rhythm:
-                return True
-        return False
+                res = True
+        if NeedRhythm:
+            return res
+        return not res
 
-    def findTrigram(self, pingze, keyWord, usedWord, rhythm):
+    def findTrigram(self, pingze, keyWord, usedWord, rhythm, NeedRhythm=True):
         try:
             candidateWords = self.trigramWord2VecModel.most_similar(positive=[keyWord],topn=100)
         except KeyError as e:
@@ -95,7 +107,7 @@ class Poem:
                 if w in usedWord:
                     continue
                 if self.checkPingzeAndWord(pingze, w):
-                    if self.checkRhythm(w, rhythm) == False:
+                    if self.checkRhythm(w, rhythm, NeedRhythm) == False:
                         tmpRes = w
                         continue
                     return w
@@ -118,7 +130,7 @@ class Poem:
             newWord = candidateWord[0]
             if newWord in usedWord:
                 continue
-            if (curIndex == len(segment) - 1 and self.checkRhythm(newWord, rhythm)) or self.checkPingzeAndWord(segment[curIndex], newWord) or ForceBuild:
+            if (curIndex == len(segment) - 1 and self.checkRhythm(newWord, rhythm, True)) or self.checkPingzeAndWord(segment[curIndex], newWord) or ForceBuild:
                 res = newWord
                 remaining = self.fill(curIndex, newWord, segment, usedWord, rhythm, ForceBuild, direction)
                 if remaining != False:
@@ -151,6 +163,26 @@ class Poem:
                 break
         return result, flag
 
+    def generateTangSentence(self, index, keyWord, usedWord, rhythm, ForceBuild=False):
+        res = keyWord
+        if self._title == "7":
+            candidateWords = self.bigramWord2VecModel.most_similar(positive=[keyWord], topn=100)
+            candidateWords = sorted(candidateWords, key=operator.itemgetter(1), reverse=True)
+            for candidateWord in candidateWords:
+                newWord = candidateWord[0]
+                if newWord in usedWord:
+                    continue
+                keyWord = newWord
+                res += newWord
+                break
+        if index == 2:
+            res += self.findTrigram("", keyWord, usedWord, rhythm, NeedRhythm=False)
+        else:
+            res += self.findTrigram("", keyWord, usedWord, rhythm)
+        if len(res) != 5 and len(res) != 7:
+            res = ""
+        return res, True
+
     def segment(self, sentence):
         length = len(sentence)
         res = []
@@ -175,29 +207,39 @@ class Poem:
         if lastWord in self.word2rhythm:
             lastRhythm.append(self.word2rhythm[lastWord])
 
-    def write(self):
+    def write(self, isTang=False):
         if self._title not in self.title2pingze:
             raise ValueError("title[%s] not defined in dict" % self._title)
-        pingzeSentences = self.title2pingze[self._title]
+        if isTang:
+            length = 4
+            pingzeSentences = self._title
+        else:
+            pingzeSentences = self.title2pingze[self._title]
+            length = len(pingzeSentences)
 
         result = []
         usedWord = []
         j = 0
         lastRhythm = []
-        for i in range(len(pingzeSentences)):
+        for i in range(length):
             # generate ith sentence
-            pingzeSentence = pingzeSentences[i]
             keyWordList = self._important_words[j]
             failTimes = 0;
             for keyWord in keyWordList:
                 # try to generate ith sentence using keyWord
                 if keyWord in usedWord:
                     continue
-                sentence, flag = self.generateSentence(pingzeSentence, keyWord, usedWord, lastRhythm)
+                if isTang:
+                    sentence, flag = self.generateTangSentence(i, keyWord, usedWord, lastRhythm)
+                else:
+                    sentence, flag = self.generateSentence(pingzeSentences[i], keyWord, usedWord, lastRhythm)
                 if not sentence:
                     failTimes += 1
                     if failTimes == len(keyWordList):
-                        sentence, flag = self.generateSentence(pingzeSentence, keyWordList[0], usedWord, lastRhythm, ForceBuild=True)
+                        if isTang:
+                            sentence, flag = self.generateTangSentence(i,keyWord, usedWord, lastRhythm, ForceBuild=True)
+                        else:
+                            sentence, flag = self.generateSentence(pingzeSentences[i], keyWordList[0], usedWord, lastRhythm, ForceBuild=True)
                     else:
                         continue
                 result.append(sentence)
@@ -206,7 +248,8 @@ class Poem:
                 if flag:
                     j += 1
                 break
-        return self.format(result)
+        return self.format(result, isTang)
+
 
 def checkValid(key, userKey):
     for keyElment in userKey:
@@ -284,13 +327,17 @@ if __name__ == '__main__':
 
     tags = getUserInput(sys.argv[1])
 
+    # tags = getUserInput("./input.txt")
+    # tags = [["7", "明月", "故乡", "佳人", "春风"]]
+
+
     for tag in tags:
         title = tag[0].decode()
         if title not in titleList:
             print "Oooops, " + title + " is not support yet!"
             continue
         poem._title = title
-        words = []
+        words = []s
         tmp = []
         for i in range(1, len(tag)):
             tmp.append(tag[i])
@@ -298,9 +345,16 @@ if __name__ == '__main__':
         words = extendKeyWords(words, poem)
         #numpy.random.shuffle(words)
         poem._important_words = words
-        result = poem.write()
+        if poem._title == "5" or poem._title == "7":
+            result = poem.write(isTang=True)
+        else:
+            result = poem.write(isTang=False)
+
         print "keywords: " + (" ".join(tmp))
-        print poem._title
+        if poem._title == "5" or poem._title == "7":
+            print u"五言诗" if poem._title == "5" else u"七言诗"
+        else:
+            print poem._title
         print result[0]
         print result[1]
         print "\n"
