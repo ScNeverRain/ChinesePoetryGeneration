@@ -123,8 +123,12 @@ class Poem:
             # find trigram using keyWord
             res = self.findTrigram(segment[curIndex], keyWord, usedWord, rhythm)
             return res
+        try:
+            candidateWords = self.bigramWord2VecModel.most_similar(positive=[keyWord], topn=100)
+        except KeyError as e:
+            #print "Cannot find " + keyWord
+            return False
 
-        candidateWords = self.bigramWord2VecModel.most_similar(positive=[keyWord], topn=100)
         candidateWords = sorted(candidateWords, key=operator.itemgetter(1), reverse=True)
         for candidateWord in candidateWords:
             newWord = candidateWord[0]
@@ -145,6 +149,7 @@ class Poem:
         # Flase: this sentence is gennerated without using keywords
         # True: this sentence is gennerated using this keywords
         flag = False
+        result = ""
         for i in range(len(segment)):
             result = ""
             if len(segment[i]) == 3 and i == 0:
@@ -154,19 +159,27 @@ class Poem:
                 result = keyWord
                 front = self.fill(i, keyWord, segment, usedWord, rhythm, ForceBuild, direction=-1)
                 if front == False:
+                    result = ""
                     continue
                 back = self.fill(i, keyWord, segment, usedWord, rhythm, ForceBuild, direction=1)
                 if back == False:
+                    result = ""
                     continue
                 result = front + result + back
                 flag = True
                 break
         return result, flag
 
-    def generateTangSentence(self, index, keyWord, usedWord, rhythm, ForceBuild=False):
+    def generateTangSentence(self, index, keyWord, usedWord, rhythm):
         res = keyWord
         if self._title == "7":
-            candidateWords = self.bigramWord2VecModel.most_similar(positive=[keyWord], topn=100)
+            candidateWords = ""
+            try:
+                candidateWords = self.bigramWord2VecModel.most_similar(positive=[keyWord],topn=100)
+            except KeyError as e:
+                #print "Cannot find " + keyWord
+                return False, False
+
             candidateWords = sorted(candidateWords, key=operator.itemgetter(1), reverse=True)
             for candidateWord in candidateWords:
                 newWord = candidateWord[0]
@@ -237,7 +250,8 @@ class Poem:
                     failTimes += 1
                     if failTimes == len(keyWordList):
                         if isTang:
-                            sentence, flag = self.generateTangSentence(i,keyWord, usedWord, lastRhythm, ForceBuild=True)
+                            #sentence, flag = self.generateTangSentence(i,keyWord, usedWord, lastRhythm, ForceBuild=True)
+                            return False
                         else:
                             sentence, flag = self.generateSentence(pingzeSentences[i], keyWordList[0], usedWord, lastRhythm, ForceBuild=True)
                     else:
@@ -272,7 +286,11 @@ def getTopNKeyWords(poem, used, count = 20):
 def extendKeyWords(keyWords, poem):
     candidateLength = 20
     res = {}
-    length = len(poem.title2pingze[poem._title])
+    length = 4
+    if poem._title == "5" or poem._title == "7":
+        length = 4
+    else:
+        length = len(poem.title2pingze[poem._title])
     used = []
     finished = 0;
     for key, count in poem.bigramCount:
@@ -330,14 +348,13 @@ if __name__ == '__main__':
     # tags = getUserInput("./input.txt")
     # tags = [["7", "明月", "故乡", "佳人", "春风"]]
 
-
     for tag in tags:
         title = tag[0].decode()
         if title not in titleList:
             print "Oooops, " + title + " is not support yet!"
             continue
         poem._title = title
-        words = []s
+        words = []
         tmp = []
         for i in range(1, len(tag)):
             tmp.append(tag[i])
@@ -347,6 +364,8 @@ if __name__ == '__main__':
         poem._important_words = words
         if poem._title == "5" or poem._title == "7":
             result = poem.write(isTang=True)
+            if result == False:
+                continue
         else:
             result = poem.write(isTang=False)
 
@@ -358,4 +377,5 @@ if __name__ == '__main__':
         print result[0]
         print result[1]
         print "\n"
+
 
