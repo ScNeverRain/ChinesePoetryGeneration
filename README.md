@@ -1,6 +1,6 @@
 # ChinesePoetryGeneration
-# Introduction
-This generator is rule-based. According to the strict format of the poem (acctually it's song ci, the poem of Sony dynasty), combining the key words that user porvides, we can generatethe many qualified poems.
+# 1. Rule-Based
+According to the strict format of the poem (acctually it's Song Poem, the poem of Sony dynasty), combining the key words that user porvides, we can generatethe many qualified poems.
 
 learn.py is to learn the traning data and pingze constrains, it will produce some data models under ./model/ folder
 
@@ -21,3 +21,6 @@ The last line is the "END" string
 python test.py USER_INPUT_FILE
 
 ![image](http://www-scf.usc.edu/~jiaqigu/544/test.png)
+
+# 2. RNN-Based
+... ...
