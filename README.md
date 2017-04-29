@@ -1,26 +1,14 @@
-# ChinesePoetryGeneration
-# 1. Rule-Based
-According to the strict format of the poem (acctually it's Song Poem, the poem of Sony dynasty), combining the key words that user porvides, we can generatethe many qualified poems.
+# Chinese Poetry Generation
 
-learn.py is to learn the traning data and pingze constrains, it will produce some data models under ./model/ folder
+This is our course project for CSCI 544 at USC.
 
-test.py will generate the poem using these models prodeuced by the learn.py. It will take a user input file as a parameter, this input file contains the poem title and keywords. 
+We have implemented two Chinese poem generators using two different methods.
 
-# 1.1 Learn
-python learn.py YOUR_TRAINING_DATA
-![image](http://www-scf.usc.edu/~jiaqigu/544/learn.png)
+[rule\_based/](rule_based/) is a poem generator based on a trained word model and predefined format constraints.
 
-# 1.2 User input file format
-Every line will generate a poem, the first word is the poem title(what kind of poem should be generated), then is a list of keywords
+![rule\_screenshot](http://www-scf.usc.edu/~jiaqigu/544/test.png))
 
-The last line is the "END" string
+[rnn\_based/](rnn_based/) is a poem generator based on the RNN encoder-decoder framework.
 
-![image](http://www-scf.usc.edu/~jiaqigu/544/user_input.png)
+![rnn\_screenshot](rnn_based/img/main.png)
 
-# 1.3 Let's generate some poems
-python test.py USER_INPUT_FILE
-
-![image](http://www-scf.usc.edu/~jiaqigu/544/test.png)
-
-# 2. RNN-Based
-... ...
